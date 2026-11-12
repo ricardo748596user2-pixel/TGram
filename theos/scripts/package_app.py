@@ -204,6 +204,7 @@ def main():
     if entitlement:
         original=plistlib.loads((ROOT/entitlement).read_bytes())
         processed=resolve(original)
+        processed['application-identifier']=plist['CFBundleIdentifier']
         path=OUT/'signing.entitlements'
         path.write_bytes(plistlib.dumps(processed))
         signing_entitlements=path
