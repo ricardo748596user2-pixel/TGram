@@ -190,7 +190,7 @@ def main():
     plist['MinimumOSVersion']=os.environ.get('ONEGRAM_DEPLOYMENT',settings['IPHONEOS_DEPLOYMENT_TARGET'])
     plist['UIDeviceFamily']=[int(x) for x in settings['TARGETED_DEVICE_FAMILY'].split(',')]
     if arch=='armv6':plist.pop('UIRequiredDeviceCapabilities',None)
-    if plist['CFBundleIdentifier']!='dev.IllyaGIF.Onegram' or plist['CFBundleExecutable']!='Telegram':
+    if plist['CFBundleIdentifier']!='dev.IllyaGIF.TGram' or plist['CFBundleExecutable']!='Telegram':
         raise ValueError('Unexpected application identity')
     (app/'Info.plist').write_bytes(plistlib.dumps(plist,fmt=plistlib.FMT_BINARY,sort_keys=False))
     (app/'PkgInfo').write_bytes((plist['CFBundlePackageType']+plist['CFBundleSignature']).encode())

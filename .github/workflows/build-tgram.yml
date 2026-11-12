@@ -1,0 +1,75 @@
+name: Build TGram for iPad 2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-armv7:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out TGram source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure TGram identity
+        run: |
+          cat > Config.xcconfig <<'EOF'
+          TELEGRAPH_BUNDLE_ID = dev.IllyaGIF.TGram
+          TELEGRAM_APP_VERSION = 1.4.4
+          EOF
+
+      - name: Build ARMv7 IPA
+        env:
+          ONEGRAM_API_ID: ${{ secrets.ONEGRAM_API_ID }}
+          ONEGRAM_API_HASH: ${{ secrets.ONEGRAM_API_HASH }}
+          ONEGRAM_SKIP_DEVICE_INSTALL: "1"
+          ONEGRAM_PLUGINS: "0"
+        run: ./build.sh --build armv7
+
+      - name: Verify and name IPA
+        run: |
+          python3 - <<'PY'
+          import hashlib, plistlib, shutil, struct, zipfile
+          from pathlib import Path
+
+          source = Path('theos/build/Onegram.ipa')
+          output = Path('TGram-1.4.4-armv7.ipa')
+          if not source.is_file():
+              raise SystemExit(f'Build output missing: {source}')
+          with zipfile.ZipFile(source) as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f'IPA CRC check failed: {bad}')
+              info = plistlib.loads(archive.read('Payload/Telegram.app/Info.plist'))
+              executable = archive.read('Payload/Telegram.app/Telegram')
+          expected = ('dev.IllyaGIF.TGram', 'TGram', '1.4.4')
+          actual = (info.get('CFBundleIdentifier'), info.get('CFBundleDisplayName'), info.get('CFBundleShortVersionString'))
+          if actual != expected:
+              raise SystemExit(f'Unexpected app identity: {actual}')
+          if info.get('UIRequiresFullScreen') is not True:
+              raise SystemExit('Full-screen setting missing')
+          if executable[:4] == b'\xca\xfe\xba\xbe':
+              count = struct.unpack_from('>I', executable, 4)[0]
+              arches = [struct.unpack_from('>IIIII', executable, 8 + i * 20)[:2] for i in range(count)]
+          elif executable[:4] == b'\xce\xfa\xed\xfe':
+              arches = [struct.unpack_from('<II', executable, 4)]
+          else:
+              raise SystemExit(f'Unexpected Mach-O header: {executable[:4].hex()}')
+          if not any(cpu == 12 and (subtype & 0x00ffffff) == 9 for cpu, subtype in arches):
+              raise SystemExit(f'ARMv7 slice missing: {arches}')
+          shutil.copy2(source, output)
+          print(f'IPA={output} SHA256={hashlib.sha256(output.read_bytes()).hexdigest()}')
+          print(f'APP={actual} MIN_IOS={info.get("MinimumOSVersion")} ARCHES={arches}')
+          PY
+
+      - name: Upload versioned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: TGram-1.4.4-armv7
+          path: TGram-1.4.4-armv7.ipa
+          if-no-files-found: error

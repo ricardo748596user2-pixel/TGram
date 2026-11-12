@@ -314,7 +314,8 @@ static NSDictionary *TGParseStartupLocalizationFile(NSString *path)
 
 static NSDictionary *TGDefaultStartupLocalization()
 {
-    NSString *code = [[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"dev.IllyaGIF.Onegram"] ? @"ru" : @"en";
+    NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+    NSString *code = ([bundleIdentifier isEqualToString:@"dev.IllyaGIF.Onegram"] || [bundleIdentifier isEqualToString:@"dev.IllyaGIF.TGram"]) ? @"ru" : @"en";
     NSString *directory = [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.lproj", code]];
     NSDictionary *dict = TGParseStartupLocalizationFile([directory stringByAppendingPathComponent:@"OnegramStartup.txt"]);
     if (dict.count == 0 && ![code isEqualToString:@"en"])
@@ -722,7 +723,7 @@ TGLocalization *currentNativeLocalization() {
             phaseStart = CFAbsoluteTimeGetCurrent();
             NSString *nativeLanguage = @"en";
             NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-            if ([bundleIdentifier isEqualToString:@"dev.IllyaGIF.Onegram"]) {
+            if ([bundleIdentifier isEqualToString:@"dev.IllyaGIF.Onegram"] || [bundleIdentifier isEqualToString:@"dev.IllyaGIF.TGram"]) {
                 nativeLanguage = @"ru";
             }
             value = [[TGLocalization alloc] initWithVersion:0 code:nativeLanguage dict:@{} isActive:true];
