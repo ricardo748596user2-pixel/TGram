@@ -1575,7 +1575,7 @@ static UIView *findDimmingView(UIView *view)
     if (_restrictLandscape)
         return UIInterfaceOrientationMaskPortrait;
     
-    return UIInterfaceOrientationMaskAllButUpsideDown;
+    return TGIsPad() ? UIInterfaceOrientationMaskAll : UIInterfaceOrientationMaskAllButUpsideDown;
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration

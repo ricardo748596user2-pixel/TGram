@@ -1500,7 +1500,7 @@ static const CGFloat TGTabBarButtonAvatarRingSide = 31.0f;
     if (iosMajorVersion() < 6 && !TGIsPad())
         return interfaceOrientation == UIInterfaceOrientationPortrait;
     
-    return [TGViewController autorotationAllowed] && (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
+    return [TGViewController autorotationAllowed] && (TGIsPad() || interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
 }
 
 - (BOOL)shouldAutorotate

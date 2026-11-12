@@ -51,8 +51,15 @@ jobs:
           actual = (info.get('CFBundleIdentifier'), info.get('CFBundleDisplayName'), info.get('CFBundleShortVersionString'))
           if actual != expected:
               raise SystemExit(f'Unexpected app identity: {actual}')
-          if info.get('UIRequiresFullScreen') is not True:
-              raise SystemExit('Full-screen setting missing')
+          required_orientations = {
+              'UIInterfaceOrientationPortrait',
+              'UIInterfaceOrientationPortraitUpsideDown',
+              'UIInterfaceOrientationLandscapeLeft',
+              'UIInterfaceOrientationLandscapeRight',
+          }
+          supported_orientations = set(info.get('UISupportedInterfaceOrientations~ipad', []))
+          if not required_orientations.issubset(supported_orientations):
+              raise SystemExit(f'iPad orientations missing: {required_orientations - supported_orientations}')
           if executable[:4] == b'\xca\xfe\xba\xbe':
               count = struct.unpack_from('>I', executable, 4)[0]
               arches = [struct.unpack_from('>IIIII', executable, 8 + i * 20)[:2] for i in range(count)]

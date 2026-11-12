@@ -402,8 +402,6 @@
 }
 
 - (bool)shouldAutorotate {
-    if (TGIsPad())
-        return true;
     UIViewController *controller = [self autorotationController];
     if (controller == nil)
         return true;
@@ -413,8 +411,6 @@
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    if (TGIsPad())
-        return YES;
     if (!TGIsPad() && iosMajorVersion() < 6)
         return interfaceOrientation == UIInterfaceOrientationPortrait;
     UIViewController *controller = [self autorotationController];
