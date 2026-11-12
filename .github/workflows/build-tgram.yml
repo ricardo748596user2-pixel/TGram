@@ -25,8 +25,8 @@ jobs:
 
       - name: Build ARMv7 IPA
         env:
-          ONEGRAM_API_ID: ${{ secrets.ONEGRAM_API_ID }}
-          ONEGRAM_API_HASH: ${{ secrets.ONEGRAM_API_HASH }}
+          ONEGRAM_API_ID: ${{ secrets.TGRAM_API_ID }}
+          ONEGRAM_API_HASH: ${{ secrets.TGRAM_API_HASH }}
           ONEGRAM_SKIP_DEVICE_INSTALL: "1"
           ONEGRAM_PLUGINS: "0"
         run: ./build.sh --build armv7
