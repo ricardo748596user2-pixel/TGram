@@ -461,12 +461,6 @@ extern void TGRotationLog(NSString *format, ...);
     TGRotationLog(@"[root] didRotate from=%d %@", (int)fromInterfaceOrientation, [self rotationStateDescription]);
 }
 
-- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
-{
-    TGRotationLog(@"[root] willTransitionToSize=%@ %@", NSStringFromCGSize(size), [self rotationStateDescription]);
-    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-}
-
 - (void)loadView
 {
     [super loadView];
