@@ -52,6 +52,10 @@ extern void TGRotationLog(NSString *format, ...);
     
     id<SDisposable> _presentationDisposable;
     bool _ios4ManualContainerAppeared;
+    
+    UILabel *_rotationProbeLabel;
+    NSString *_rotationProbeText;
+    NSTimer *_rotationProbeTimer;
 }
 
 @end
@@ -60,6 +64,7 @@ extern void TGRotationLog(NSString *format, ...);
 
 - (void)dealloc
 {
+    [_rotationProbeTimer invalidate];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -440,6 +445,8 @@ extern void TGRotationLog(NSString *format, ...);
 - (void)viewDidLayoutSubviews
 {
     [super viewDidLayoutSubviews];
+    [self startRotationProbeTimer];
+    [self updateRotationProbe];
     static CGSize lastLoggedSize;
     CGSize size = self.view.bounds.size;
     if (!CGSizeEqualToSize(size, lastLoggedSize))
@@ -452,6 +459,7 @@ extern void TGRotationLog(NSString *format, ...);
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
 {
     TGRotationLog(@"[root] willAnimateRotation to=%d %@", (int)toInterfaceOrientation, [self rotationStateDescription]);
+    [self updateRotationProbe];
     [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
 }
 
@@ -459,6 +467,62 @@ extern void TGRotationLog(NSString *format, ...);
 {
     [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
     TGRotationLog(@"[root] didRotate from=%d %@", (int)fromInterfaceOrientation, [self rotationStateDescription]);
+}
+
+- (void)updateRotationProbe
+{
+    UIWindow *window = self.view.window;
+    if (window == nil)
+        return;
+    
+    UIScreen *screen = [UIScreen mainScreen];
+    CGRect screenBounds = screen.bounds;
+    CGRect windowBounds = window.bounds;
+    CGRect viewBounds = self.view.bounds;
+    CGAffineTransform transform = window.transform;
+    
+    NSString *text = [NSString stringWithFormat:@"scr %.0fx%.0f | win %.0fx%.0f | view %.0fx%.0f | tr %.0f | sb %d if %d",
+                      screenBounds.size.width, screenBounds.size.height,
+                      windowBounds.size.width, windowBounds.size.height,
+                      viewBounds.size.width, viewBounds.size.height,
+                      atan2(transform.b, transform.a) * 180.0f / (CGFloat)M_PI,
+                      (int)[UIApplication sharedApplication].statusBarOrientation,
+                      (int)[self interfaceOrientation]];
+    
+    if (_rotationProbeLabel == nil)
+    {
+        _rotationProbeLabel = [[UILabel alloc] init];
+        _rotationProbeLabel.backgroundColor = [UIColor colorWithWhite:0.0f alpha:0.8f];
+        _rotationProbeLabel.textColor = [UIColor yellowColor];
+        _rotationProbeLabel.font = [UIFont boldSystemFontOfSize:11.0f];
+        _rotationProbeLabel.numberOfLines = 1;
+        _rotationProbeLabel.userInteractionEnabled = false;
+    }
+    
+    if (![text isEqualToString:_rotationProbeText])
+    {
+        _rotationProbeText = text;
+        _rotationProbeLabel.text = text;
+        [_rotationProbeLabel sizeToFit];
+        _rotationProbeLabel.frame = CGRectMake(3.0f, 3.0f, _rotationProbeLabel.frame.size.width + 6.0f, _rotationProbeLabel.frame.size.height + 4.0f);
+        TGRotationLog(@"[probe] %@", text);
+    }
+    
+    if (_rotationProbeLabel.superview == nil)
+        [self.view addSubview:_rotationProbeLabel];
+    [self.view bringSubviewToFront:_rotationProbeLabel];
+}
+
+- (void)rotationProbeTick:(NSTimer *)timer
+{
+    [self updateRotationProbe];
+}
+
+- (void)startRotationProbeTimer
+{
+    if (_rotationProbeTimer != nil)
+        return;
+    _rotationProbeTimer = [NSTimer scheduledTimerWithTimeInterval:0.7 target:self selector:@selector(rotationProbeTick:) userInfo:nil repeats:YES];
 }
 
 - (void)loadView
