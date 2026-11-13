@@ -445,6 +445,14 @@ extern void TGRotationLog(NSString *format, ...);
 - (void)viewDidLayoutSubviews
 {
     [super viewDidLayoutSubviews];
+    
+    // Force _mainView to match root view bounds (fixes legacy rotation where
+    // window uses transform but root view bounds may not propagate to subviews)
+    if (_mainView != nil && !CGSizeEqualToSize(_mainView.frame.size, self.view.bounds.size))
+    {
+        _mainView.frame = self.view.bounds;
+    }
+    
     [self startRotationProbeTimer];
     [self updateRotationProbe];
     static CGSize lastLoggedSize;
@@ -845,9 +853,13 @@ extern void TGRotationLog(NSString *format, ...);
 }
 
 - (CGRect)applicationBounds {
-    CGSize screenSize = TGScreenSize();
-    CGFloat min = MIN(screenSize.width, screenSize.height);
-    CGFloat max = MAX(screenSize.width, screenSize.height);
+    // Use window bounds (actual container size) instead of cached TGScreenSize()
+    // TGScreenSize() caches 768x1024 on first call and never updates on rotation
+    UIWindow *window = self.view.window;
+    CGSize windowSize = window ? window.bounds.size : TGScreenSize();
+    
+    CGFloat min = MIN(windowSize.width, windowSize.height);
+    CGFloat max = MAX(windowSize.width, windowSize.height);
     
     CGSize size = CGSizeZero;
     CGSize (^sizeByDeviceOrientation)(void) = ^CGSize {
