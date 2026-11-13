@@ -60,6 +60,8 @@ jobs:
           supported_orientations = set(info.get('UISupportedInterfaceOrientations~ipad', []))
           if not required_orientations.issubset(supported_orientations):
               raise SystemExit(f'iPad orientations missing: {required_orientations - supported_orientations}')
+          if info.get('UIRequiresFullScreen') is not True:
+              raise SystemExit('UIRequiresFullScreen must be true for the legacy iPad layout')
           if executable[:4] == b'\xca\xfe\xba\xbe':
               count = struct.unpack_from('>I', executable, 4)[0]
               arches = [struct.unpack_from('>IIIII', executable, 8 + i * 20)[:2] for i in range(count)]

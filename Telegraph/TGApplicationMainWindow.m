@@ -6,6 +6,32 @@
 
 #import "../submodules/LegacyComponents/SSignalKitCompat/SSignalKit.h"
 
+#include <stdarg.h>
+
+void TGRotationLog(NSString *format, ...)
+{
+    NSArray *documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true);
+    if (documents.count == 0)
+        return;
+    NSString *path = [[documents objectAtIndex:0] stringByAppendingPathComponent:@"tgram-rotation.log"];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSDictionary *attributes = [fileManager attributesOfItemAtPath:path error:nil];
+    if ([[attributes objectForKey:NSFileSize] unsignedLongLongValue] > 512 * 1024)
+        return;
+    va_list arguments;
+    va_start(arguments, format);
+    NSString *message = [[NSString alloc] initWithFormat:format arguments:arguments];
+    va_end(arguments);
+    NSString *line = [NSString stringWithFormat:@"%.3f %@\n", [[NSProcessInfo processInfo] systemUptime], message];
+    if (![fileManager fileExistsAtPath:path])
+        [fileManager createFileAtPath:path contents:nil attributes:nil];
+    NSFileHandle *handle = [NSFileHandle fileHandleForWritingAtPath:path];
+    [handle seekToEndOfFile];
+    [handle writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
+    [handle closeFile];
+    NSLog(@"[TGramRotation] %@", message);
+}
+
 @interface TGApplicationMainWindow () {
     NSMutableArray *_presentedControllers;
 }
@@ -24,6 +50,7 @@
 
 - (void)setBounds:(CGRect)bounds {
     [super setBounds:bounds];
+    TGRotationLog(@"[window] setBounds=%@ frame=%@ transform=%@ screen=%@ statusBar=%d", NSStringFromCGRect(bounds), NSStringFromCGRect(self.frame), NSStringFromCGAffineTransform(self.transform), NSStringFromCGRect([UIScreen mainScreen].bounds), (int)[UIApplication sharedApplication].statusBarOrientation);
 }
 
 - (void)presentOverlayController:(TGViewController * )controller {

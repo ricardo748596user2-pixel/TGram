@@ -29,6 +29,8 @@
 #import "../OnegramRuntime/OGRuntime.h"
 #import "../OnegramRuntime/OGStartupDiagnostics.h"
 
+extern void TGRotationLog(NSString *format, ...);
+
 @interface TGRootController ()
 {
     TGTabletMainView *_mainView;
@@ -417,6 +419,52 @@
     if (controller == nil || controller == self)
         return [super shouldAutorotateToInterfaceOrientation:interfaceOrientation];
     return [controller shouldAutorotateToInterfaceOrientation:interfaceOrientation];
+}
+
+- (NSString *)rotationStateDescription
+{
+    UIWindow *window = self.view.window;
+    return [NSString stringWithFormat:@"screen=%@ window=%@ windowTransform=%@ view=%@ viewBounds=%@ viewTransform=%@ statusBar=%d interface=%d mask=%lu autorotation=%d",
+            NSStringFromCGRect([UIScreen mainScreen].bounds),
+            NSStringFromCGRect(window.frame),
+            NSStringFromCGAffineTransform(window.transform),
+            NSStringFromCGRect(self.view.frame),
+            NSStringFromCGRect(self.view.bounds),
+            NSStringFromCGAffineTransform(self.view.transform),
+            (int)[UIApplication sharedApplication].statusBarOrientation,
+            (int)[self interfaceOrientation],
+            (unsigned long)self.supportedInterfaceOrientations,
+            (int)[TGViewController autorotationAllowed]];
+}
+
+- (void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    static CGSize lastLoggedSize;
+    CGSize size = self.view.bounds.size;
+    if (!CGSizeEqualToSize(size, lastLoggedSize))
+    {
+        lastLoggedSize = size;
+        TGRotationLog(@"[root] didLayout %@", [self rotationStateDescription]);
+    }
+}
+
+- (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    TGRotationLog(@"[root] willAnimateRotation to=%d %@", (int)toInterfaceOrientation, [self rotationStateDescription]);
+    [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+{
+    [super didRotateFromInterfaceOrientation:fromInterfaceOrientation];
+    TGRotationLog(@"[root] didRotate from=%d %@", (int)fromInterfaceOrientation, [self rotationStateDescription]);
+}
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+{
+    TGRotationLog(@"[root] willTransitionToSize=%@ %@", NSStringFromCGSize(size), [self rotationStateDescription]);
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
 }
 
 - (void)loadView
